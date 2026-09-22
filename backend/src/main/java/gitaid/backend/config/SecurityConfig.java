@@ -1,6 +1,8 @@
 package gitaid.backend.config;
 
 import gitaid.backend.security.GithubOAuth2UserService;
+import lombok.RequiredArgsConstructor;
+
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -20,18 +22,21 @@ import org.springframework.security.web.authentication.SimpleUrlAuthenticationSu
 
 @Configuration 
 @EnableWebSecurity 
+@RequiredArgsConstructor 
 public class SecurityConfig {
 
-  private  GithubOAuth2UserService githubOAuth2UserService;
-  private  AuthenticationSuccessHandler oauth2SuccessHandler;
-  private  AuthenticationFailureHandler oauth2FailureHandler;
+  private final  GithubOAuth2UserService githubOAuth2UserService;
+  
 
   // SecurityConfig(GithubOAuth2UserService githubOAuth2UserService) {
   //   this.githubOAuth2UserService = githubOAuth2UserService;
   // }
 
   @Bean 
-  SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception{
+  SecurityFilterChain securityFilterChain(HttpSecurity http,
+    AuthenticationSuccessHandler oauth2SuccessHandler,
+    AuthenticationFailureHandler oauth2FailureHandler
+  ) throws Exception{
     http
       .cors(Customizer.withDefaults())
       .csrf(csrf -> csrf.disable())
@@ -69,17 +74,25 @@ public class SecurityConfig {
   }
   @Bean
   AuthenticationSuccessHandler oauth2SuccessHandler(
-    @Value ("${app.frontend-url}") String frontendUrl){
-      SimpleUrlAuthenticationSuccessHandler handler = new SimpleUrlAuthenticationSuccessHandler();
-      handler.setDefaultTargetUrl(frontendUrl + "/auth/callback");
-      return handler;
-    }
+      @Value("${app.frontend-url}") String frontendUrl) {
 
-  @Bean 
-  AuthenticationFailureHandler oauth2FailureHandler(
-    @Value ("{app.frontend-url}") String frontendUrl){
-      SimpleUrlAuthenticationFailureHandler handler = new SimpleUrlAuthenticationFailureHandler();
-      handler.setDefaultFailureUrl(frontendUrl + "/login?error=oauth_failed");
+      SimpleUrlAuthenticationSuccessHandler handler =
+          new SimpleUrlAuthenticationSuccessHandler();
+
+      handler.setDefaultTargetUrl(frontendUrl + "/auth/callback");
+
       return handler;
-    }
+  }
+
+  @Bean
+  AuthenticationFailureHandler oauth2FailureHandler(
+      @Value("${app.frontend-url}") String frontendUrl) {
+
+      SimpleUrlAuthenticationFailureHandler handler =
+          new SimpleUrlAuthenticationFailureHandler();
+
+      handler.setDefaultFailureUrl(frontendUrl + "/login?error=oauth_failed");
+
+      return handler;
+  }
 }
