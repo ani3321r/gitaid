@@ -23,6 +23,7 @@ public class RepoController {
   private final CurrentUser currentUser;
   private final RepoService repoService;
 
+  @GetMapping
   public List<RepositoryResponse> list(
     @RequestParam(name="refresh", defaultValue="true") boolean refresh
   ){

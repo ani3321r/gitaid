@@ -2,34 +2,24 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import {
-  GitBranch,
-  LayoutDashboard,
-  LogOut,
-  Settings,
-} from "lucide-react";
+import { LogOut, Settings } from "lucide-react";
 
-import { GitAidIcon } from "../icons/gitaid-icon";
+import { GitAidIcon } from "@/components/icons/gitaid-icon";
 
 import { ModeToggle } from "@/components/ui/mode-toggle";
 import { useCurrentUser, useLogout } from "@/hooks/use-auth";
-
-import {
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
-} from "@/components/ui/avatar";
-
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-  DropdownMenuGroup,
 } from "@/components/ui/dropdown-menu";
-
+import { Separator } from "@/components/ui/separator";
 import {
   Sidebar,
   SidebarContent,
@@ -43,15 +33,13 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarProvider,
+  SidebarTrigger,
 } from "@/components/ui/sidebar";
-
-import { isDashboardNavActive } from "@/lib/dashboard-nav";
+import {
+  dashboardNavGroups,
+  isDashboardNavActive,
+} from "@/lib/dashboard-nav";
 import { cn } from "@/lib/utils";
-
-
-/* =========================================================
-   APP SHELL
-   ========================================================= */
 
 export function AppShell({
   children,
@@ -67,15 +55,13 @@ export function AppShell({
   hideHeader?: boolean;
 }) {
   const pathname = usePathname();
+  const router = useRouter();
+  const { data: user } = useCurrentUser();
+  const logout = useLogout();
 
   return (
     <SidebarProvider>
       <Sidebar variant="inset" collapsible="icon">
-
-        {/* =================================================
-            SIDEBAR HEADER
-            ================================================= */}
-
         <SidebarHeader>
           <SidebarMenu>
             <SidebarMenuItem>
@@ -84,313 +70,146 @@ export function AppShell({
                 render={<Link href="/dashboard" />}
                 tooltip="GitAid"
               >
-                <BrandMark />
+                <GitAidIcon className="size-8 rounded-[10px]" />
+                <div className="grid flex-1 text-left text-sm leading-tight">
+                  <span className="truncate font-semibold">GitAid</span>
+                  <span className="truncate text-xs text-muted-foreground">
+                    Chat with your code
+                  </span>
+                </div>
               </SidebarMenuButton>
             </SidebarMenuItem>
           </SidebarMenu>
         </SidebarHeader>
 
-
-        {/* =================================================
-            SIDEBAR CONTENT
-            ================================================= */}
-
         <SidebarContent>
-
-          {/* ---------------- Workspace ---------------- */}
-
-          <SidebarGroup>
-            <SidebarGroupLabel>
-              Workspace
-            </SidebarGroupLabel>
-
-            <SidebarGroupContent>
-              <SidebarMenu>
-
-                {/* Overview */}
-
-                <SidebarMenuItem>
-                  <SidebarMenuButton
-                    render={<Link href="/dashboard" />}
-                    isActive={isDashboardNavActive(
-                      pathname,
-                      "/dashboard"
-                    )}
-                    tooltip="Overview"
-                  >
-                    <LayoutDashboard />
-                    <span>Overview</span>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-
-
-                {/* Repositories */}
-
-                <SidebarMenuItem>
-                  <SidebarMenuButton
-                    render={<Link href="/repositories" />}
-                    isActive={isDashboardNavActive(
-                      pathname,
-                      "/repositories"
-                    )}
-                    tooltip="Repositories"
-                  >
-                    <GitBranch />
-                    <span>Repositories</span>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-
-              </SidebarMenu>
-            </SidebarGroupContent>
-          </SidebarGroup>
-
-
-          {/* ---------------- Account ---------------- */}
-
-          <SidebarGroup>
-            <SidebarGroupLabel>
-              Account
-            </SidebarGroupLabel>
-
-            <SidebarGroupContent>
-              <SidebarMenu>
-
-                <SidebarMenuItem>
-                  <SidebarMenuButton
-                    render={<Link href="/settings" />}
-                    isActive={isDashboardNavActive(
-                      pathname,
-                      "/settings"
-                    )}
-                    tooltip="Settings"
-                  >
-                    <Settings />
-                    <span>Settings</span>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-
-              </SidebarMenu>
-            </SidebarGroupContent>
-          </SidebarGroup>
-
+          {dashboardNavGroups.map((group) => (
+            <SidebarGroup key={group.label}>
+              <SidebarGroupLabel>{group.label}</SidebarGroupLabel>
+              <SidebarGroupContent>
+                <SidebarMenu>
+                  {group.items.map((item) => (
+                    <SidebarMenuItem key={item.href}>
+                      <SidebarMenuButton
+                        isActive={isDashboardNavActive(
+                          pathname,
+                          item.href,
+                          item.exact
+                        )}
+                        tooltip={item.title}
+                        render={<Link href={item.href} />}
+                      >
+                        <item.icon />
+                        <span>{item.title}</span>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  ))}
+                </SidebarMenu>
+              </SidebarGroupContent>
+            </SidebarGroup>
+          ))}
         </SidebarContent>
 
-
-        {/* =================================================
-            USER MENU
-            ================================================= */}
-
-        <UserMenu />
-
+        <SidebarFooter>
+          <SidebarMenu>
+            <SidebarMenuItem>
+              <DropdownMenu>
+                <DropdownMenuTrigger
+                  render={
+                    <SidebarMenuButton
+                      size="lg"
+                      className="data-[popup-open]:bg-sidebar-accent"
+                    />
+                  }
+                >
+                  <Avatar className="size-8 rounded-lg">
+                    <AvatarImage
+                      src={user?.avatarUrl ?? undefined}
+                      alt={user?.displayName}
+                    />
+                    <AvatarFallback className="rounded-lg">
+                      {(user?.displayName ?? "DP").slice(0, 2).toUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="grid flex-1 text-left text-sm leading-tight">
+                    <span className="truncate font-medium">
+                      {user?.displayName}
+                    </span>
+                    <span className="truncate text-xs text-muted-foreground">
+                      @{user?.githubUsername}
+                    </span>
+                  </div>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent
+                  className="min-w-56 rounded-lg"
+                  side="top"
+                  align="start"
+                  sideOffset={8}
+                >
+                  <DropdownMenuGroup>
+                    <DropdownMenuLabel className="font-normal">
+                      <div className="flex flex-col gap-1">
+                        <span className="text-sm font-medium">
+                          {user?.displayName}
+                        </span>
+                        <span className="text-xs text-muted-foreground">
+                          Connected via GitHub
+                        </span>
+                      </div>
+                    </DropdownMenuLabel>
+                  </DropdownMenuGroup>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={() => router.push("/dashboard/settings")}>
+                    <Settings />
+                    Settings
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    onClick={() => logout.mutate()}
+                    disabled={logout.isPending}
+                  >
+                    <LogOut />
+                    Log out
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </SidebarMenuItem>
+          </SidebarMenu>
+        </SidebarFooter>
       </Sidebar>
 
-
-      {/* ===================================================
-          MAIN CONTENT
-          =================================================== */}
-
       <SidebarInset>
-
         {!hideHeader && (
-          <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4">
-
-            <div className="flex min-w-0 flex-1 items-center gap-3">
-
+          <header className="sticky top-0 z-20 flex h-14 shrink-0 items-center gap-2 border-b bg-background/80 px-4 backdrop-blur">
+            <SidebarTrigger className="-ml-1" />
+            <Separator orientation="vertical" className="mr-2 h-4" />
+            <div className="flex min-w-0 flex-1 items-center justify-between gap-3">
               <div className="min-w-0">
-
                 {title && (
-                  <h1 className="truncate text-lg font-semibold">
+                  <h1 className="truncate font-heading text-sm font-medium">
                     {title}
                   </h1>
                 )}
-
                 {description && (
-                  <p className="truncate text-sm text-muted-foreground">
+                  <p className="truncate text-xs text-muted-foreground">
                     {description}
                   </p>
                 )}
-
               </div>
-
+              <div className="flex items-center gap-2">
+                {actions}
+                <ModeToggle />
+              </div>
             </div>
-
-
-            <div className="flex items-center gap-2">
-              {actions}
-              <ModeToggle />
-            </div>
-
           </header>
         )}
-
-
-        <main className="flex flex-1 flex-col gap-4 p-4 md:p-6">
-          {children}
-        </main>
-
+        <div className="flex flex-1 flex-col">{children}</div>
       </SidebarInset>
-
     </SidebarProvider>
   );
 }
 
-
-/* =========================================================
-   USER MENU
-   ========================================================= */
-
-function UserMenu() {
-  const router = useRouter();
-
-  const { data: user } = useCurrentUser();
-  const logout = useLogout();
-
-  const displayName = user?.displayName ?? "User";
-
-  const initials =
-    displayName.charAt(0).toUpperCase();
-
-
-  const handleLogout = () => {
-    logout.mutate();
-  };
-
-
-  return (
-    <SidebarFooter>
-      <SidebarMenu>
-
-        <SidebarMenuItem>
-
-          <DropdownMenu>
-
-            {/* =================================================
-                USER TRIGGER
-
-                The entire bottom user card is clickable.
-                ================================================= */}
-
-            <DropdownMenuTrigger
-              render={
-                <SidebarMenuButton
-                  size="lg"
-                  className={cn(
-                    "h-14",
-                    "data-[state=open]:bg-sidebar-accent",
-                    "data-[state=open]:text-sidebar-accent-foreground"
-                  )}
-                />
-              }
-            >
-
-              <Avatar className="size-8 rounded-lg">
-
-                <AvatarImage
-                  src={user?.avatarUrl ?? ""}
-                  alt={displayName}
-                />
-
-                <AvatarFallback className="rounded-lg">
-                  {initials}
-                </AvatarFallback>
-
-              </Avatar>
-
-
-              <div className="grid min-w-0 flex-1 text-left text-sm leading-tight">
-
-                <span className="truncate font-semibold">
-                  {displayName}
-                </span>
-
-                <span className="truncate text-xs text-muted-foreground">
-                  @{displayName}
-                </span>
-
-              </div>
-
-            </DropdownMenuTrigger>
-
-
-            {/* =================================================
-                DROPDOWN
-                ================================================= */}
-
-            <DropdownMenuContent
-  className="w-56 rounded-lg"
-  side="top"
-  align="end"
-  sideOffset={8}
->
-  <DropdownMenuGroup>
-    <DropdownMenuLabel className="font-normal">
-      <div className="flex items-center gap-3">
-        <Avatar className="size-9 rounded-lg">
-          <AvatarImage
-            src={user?.avatarUrl ?? ""}
-            alt={displayName}
-          />
-
-          <AvatarFallback className="rounded-lg">
-            {initials}
-          </AvatarFallback>
-        </Avatar>
-
-        <div className="grid min-w-0 flex-1 text-left text-sm leading-tight">
-          <span className="truncate font-semibold">
-            {displayName}
-          </span>
-
-          <span className="truncate text-xs text-muted-foreground">
-            Connected via GitHub
-          </span>
-        </div>
-      </div>
-    </DropdownMenuLabel>
-  </DropdownMenuGroup>
-
-  <DropdownMenuSeparator />
-
-  <DropdownMenuItem
-    onClick={() => router.push("/settings")}
-  >
-    <Settings />
-    <span>Settings</span>
-  </DropdownMenuItem>
-
-  <DropdownMenuSeparator />
-
-  <DropdownMenuItem
-    onClick={handleLogout}
-    disabled={logout.isPending}
-  >
-    <LogOut />
-
-    <span>
-      {logout.isPending ? "Logging out..." : "Log out"}
-    </span>
-  </DropdownMenuItem>
-</DropdownMenuContent>
-
-          </DropdownMenu>
-
-        </SidebarMenuItem>
-
-      </SidebarMenu>
-    </SidebarFooter>
-  );
-}
-
-
-/* =========================================================
-   BRAND
-   ========================================================= */
-
-export function BrandMark({
-  className,
-}: {
-  className?: string;
-}) {
+export function BrandMark({ className }: { className?: string }) {
   return (
     <div
       className={cn(
@@ -399,10 +218,23 @@ export function BrandMark({
       )}
     >
       <GitAidIcon className="size-8 rounded-[10px]" />
-
-      <span className="font-heading text-[1.05rem] leading-none">
-        GitAid
-      </span>
+      <span className="font-heading text-[1.05rem] leading-none">GitAid</span>
     </div>
+  );
+}
+
+export function GhostButtonLink({
+  href,
+  children,
+  className,
+}: {
+  href: string;
+  children: React.ReactNode;
+  className?: string;
+}) {
+  return (
+    <Button variant="ghost" size="sm" className={className} render={<Link href={href} />}>
+      {children}
+    </Button>
   );
 }
